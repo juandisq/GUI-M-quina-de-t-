@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tea Machine Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5dc;
+            color: #3e4d2f;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #a5a58d;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #d4a373;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background-color: #b5838d;
+        }
+        .alert {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Tea Machine Interface</h1>
+    </header>
+    <main>
+        <div id="status">
+            <p>Server Status: <span id="server-status" class="success">Connected</span></p>
+        </div>
+        <div id="controls">
+            <button id="connect-arduino">Connect to Arduino</button>
+            <button id="send-command">Send Command</button>
+        </div>
+        <div id="serial-monitor">
+            <h3>Serial Monitor</h3>
+            <pre id="monitor-output" style="background: #f1f1f1; padding: 10px; border-radius: 5px; height: 200px; overflow-y: auto;"></pre>
+        </div>
+    </main>
+    <script>
+        const monitorOutput = document.getElementById('monitor-output');
+        const serverStatus = document.getElementById('server-status');
+
+        // Update the monitor with messages
+        function updateMonitor(message) {
+            monitorOutput.textContent += `${message}\n`;
+        }
+
+        // Mock connecting to the Arduino
+        document.getElementById('connect-arduino').addEventListener('click', () => {
+            updateMonitor("Connecting to Arduino...");
+            setTimeout(() => updateMonitor("Arduino Connected!"), 1000);
+        });
+
+        // Mock sending a command to the Arduino
+        document.getElementById('send-command').addEventListener('click', () => {
+            const command = prompt("Enter command (1-19):");
+            if (command) {
+                const responses = {
+                    1: "Válvula 1 de Mezcla Abierta / Llenando Krisol 1",
+                    2: "Válvula 1 de Mezcla Cerrada",
+                    3: "Válvula 2 de Mezcla Abierta / Llenando Krisol 2",
+                    4: "Válvula 2 de Mezcla Cerrada",
+                    5: "Válvula 3 de Mezcla Abierta / Llenando Krisol 3",
+                    6: "Válvula 3 de Mezcla Cerrada",
+                    7: "Válvula Agua Fría Abierta",
+                    8: "Válvula Agua Fría Cerrada",
+                    9: "Caudalímetro 3 Activo",
+                    10: "Caudalímetro 3 Apagado",
+                    11: "Caudalímetro 2 Activo",
+                    12: "Caudalímetro 2 Apagado",
+                    13: "Caudalímetro 1 Activo",
+                    14: "Caudalímetro 1 Apagado",
+                    15: "Inyectando Vapor en Krisol 1",
+                    16: "Vapor 1 Sellado",
+                    17: "Inyectando Vapor en Krisol 2",
+                    18: "Vapor 2 Sellado",
+                    19: "Inyectando Vapor en Krisol 3"
+                };
+
+                updateMonitor(`Sent command: ${command}`);
+                setTimeout(() => {
+                    const response = responses[command] || "Unknown command.";
+                    updateMonitor(`Response: ${response}`);
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
