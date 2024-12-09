@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interfaz de Máquina de Té</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5dc;
+            color: #3e4d2f;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #a5a58d;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .page {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+        }
+        .active {
+            display: block;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #d4a373;
+            color: white;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background-color: #b5838d;
+        }
+        .alert {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+        .info {
+            background-color: #d9edf7;
+            color: #31708f;
+        }
+        .recipe-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .recipe-form input, .recipe-form select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .timer {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+        #status-bar {
+            background-color: #ddd;
+            padding: 10px;
+            text-align: center;
+            width: 100%;
+        }
+        .process-info {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Interfaz de Máquina de Té</h1>
+    </header>
+    <div id="status-bar">
+        <span id="wifi-status" class="success">WiFi: Conectado</span> |
+        <span id="bluetooth-status" class="error">Bluetooth: Desconectado</span>
+    </div>
+    <main>
+        <!-- Página de bienvenida -->
+        <div id="welcome-page" class="page active">
+            <h2>¡Bienvenido a la Máquina de Té!</h2>
+            <button id="start-button">Comenzar</button>
+        </div>
+
+        <!-- Menú principal -->
+        <div id="menu-page" class="page">
+            <h2>Seleccione una opción</h2>
+            <button id="verify-button">Verificar Máquina</button>
+            <button id="clean-button">Iniciar Limpieza</button>
+            <button id="prepare-button">Preparar Té</button>
+            <button id="new-recipe-button">Crear Nueva Receta</button>
+            <button id="emergency-button">Emergencia</button>
+            <button id="connect-button">Conectar a Arduino</button>
+
+
+        </div>
+       
+    
+        <!-- Monitor Serial: Esta es la sección donde los datos del puerto serial se mostrarán -->
+        <div>
+            <h3>Monitor Serial</h3>
+            <pre id="serial-monitor" style="background: #f1f1f1; padding: 10px; border-radius: 5px; height: 200px; overflow-y: auto;"></pre>
+            <button id="send-btn" disabled>Enviar Comando</button>
+        </div>   
+        
+        <!-- Verificar máquina -->
+        <div id="verify-page" class="page">
+            <h2>Verificar Máquina</h2>
+            <div class="process-info">
+                <p>Temperatura caldera: <span id="boiler-temp">85°C</span></p>
+                <button id="adjust-temp-button">Ajustar Temperatura</button>
+                <p id="adjust-temp-status" class="alert"></p>
+            </div>
+            <div class="process-info">
+                <button id="valve-button">Abrir Válvula</button>
+                <p id="valve-status" class="alert"></p>
+            </div>
+            <button id="connect-bluetooth">Conectar Bluetooth</button>
+            <p id="bluetooth-verify-status" class="alert"></p>
+            <button id="back-to-menu-verify">Regresar</button>
+        </div>
+
+        <!-- Limpieza -->
+        <div id="clean-page" class="page">
+            <h2>Limpieza</h2>
+            <div class="process-info">
+                <button id="short-clean">Limpieza Corta</button>
+                <button id="preventive-clean">Limpieza Preventiva</button>
+                <div id="cleaning-timer" class="timer"></div>
+                <div id="cleaning-status" class="alert"></div>
+            </div>
+            <div class="process-info">
+                <button id="clean-valve-button">Abrir Válvula</button>
+                <p id="clean-valve-status" class="alert"></p>
+            </div>
+            <button id="back-to-menu-clean">Regresar</button>
+        </div>
+
+        <!-- Preparar Té -->
+        <div id="prepare-page" class="page">
+            <h2>Preparar Té</h2>
+            <div class="process-info">
+                <label for="recipe-select">Seleccione Receta:</label>
+                <select id="recipe-select">
+                    <option value="concentrado">Concentrado</option>
+                    <option value="oriental">Oriental</option>
+                    <option value="occidental">Occidental</option>
+                </select>
+                <button id="valve-prepare-button">Abrir Válvula</button>
+                <p id="valve-prepare-status" class="alert"></p>
+                <button id="confirm-recipe">Confirmar</button>
+                <p id="recipe-alert" class="alert"></p>
+        <div id="adjustments-section" style="display: none;">
+            <h3>Ajuste de Receta</h3>
+            <label for="recipe-temp">Temperatura:</label>
+            <input type="number" id="recipe-temp" placeholder="Temperatura" min="60" max="92">
+            <label for="recipe-water">Cantidad de Agua:</label>
+            <input type="number" id="recipe-water" placeholder="Cantidad de agua" min="60" max="450">
+            <label for="recipe-time">Tiempo de Infusión:</label>
+            <input type="number" id="recipe-time" placeholder="Tiempo de infusión" min="15" max="300">
+            <button id="save-adjustments">Guardar Ajustes</button>
+            </div>
+            <button id="back-to-menu-prepare">Regresar</button>
+        </div>
+        </div>
+
+        <!-- Nueva Receta -->
+        <div id="new-recipe-page" class="page">
+            <h2>Crear Nueva Receta</h2>
+            <form id="new-recipe-form" class="recipe-form">
+                <input type="text" id="recipes-name" placeholder="Nombre de la receta" required>
+                <input type="number" id="recipes-temp" placeholder="Temperatura (60-92°C)" min="60" max="92" required>
+                <input type="number" id="recipes-water" placeholder="Cantidad de agua (60-450ml)" min="60" max="450" required>
+                <input type="number" id="recipes-time" placeholder="Tiempo de infusión (15-300s)" min="15" max="300" required>
+                <button type="submit">Guardar Receta</button>
+            </form>
+            <button id="back-to-menu-new-recipe">Regresar</button>
+        </div>
+
+        <!-- Emergencia -->
+        <div id="emergency-page" class="page">
+            <h2>Emergencia</h2>
+            <p class="alert error">¡Sistema en modo de emergencia! Todos los procesos han sido detenidos.</p>
+            <button id="reset-system">Reiniciar Sistema</button>
+        </div>
+    </main>
+
+    <script>
+        // Estado de la aplicación
+        const state = {
+            boilerTemp: 85,
+            savedRecipes: [],
+            currentProcess: null
+        };
+
+        // Funciones de navegación
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        // Función para mostrar notificaciones
+        function showAlert(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `alert ${type}`;
+        }
+        // Conectar/Desconectar Bluetooth
+    function toggleBluetooth() {
+        const bluetoothStatus = document.getElementById('bluetooth-verify-status');
+        const bluetoothIndicator = document.getElementById('bluetooth-status');
+        state.bluetoothConnected = !state.bluetoothConnected;
+
+        if (state.bluetoothConnected) {
+            // Cambiar estado a Conectado
+            bluetoothStatus.textContent = 'Bluetooth conectado exitosamente.';
+            bluetoothStatus.className = 'alert success';
+            bluetoothIndicator.textContent = 'Bluetooth: Conectado';
+            bluetoothIndicator.className = 'success';
+            alert('¡Bluetooth ahora está conectado!');
+        } else {
+            // Cambiar estado a Desconectado
+            bluetoothStatus.textContent = 'Bluetooth desconectado.';
+            bluetoothStatus.className = 'alert error';
+            bluetoothIndicator.textContent = 'Bluetooth: Desconectado';
+            bluetoothIndicator.className = 'error';
+            alert('¡Bluetooth ahora está desconectado!');
+        }
+    }   
+        // Función para manejar la válvula
+        function handleValve(statusElementId) {
+            const statusElement = document.getElementById(statusElementId);
+            statusElement.textContent = 'Válvula abierta';
+            statusElement.className = 'alert info';
+            
+            setTimeout(() => {
+                statusElement.textContent = 'Válvula cerrada';
+                statusElement.className = 'alert success';
+            }, 5000);
+        }
+
+        // Función para la limpieza corta
+        async function shortClean() {
+            const cleaningStatus = document.getElementById('cleaning-status');
+            const timer = document.getElementById('cleaning-timer');
+            
+            cleaningStatus.textContent = 'Iniciando limpieza corta...';
+            cleaningStatus.className = 'alert info';
+
+            // Proceso de limpieza corta
+            let timeLeft = 30; // 30 segundos
+            const interval = setInterval(() => {
+                timer.textContent = `Tiempo restante: ${timeLeft}s`;
+                timeLeft--;
+                
+                if (timeLeft < 0) {
+                    clearInterval(interval);
+                    timer.textContent = '';
+                    cleaningStatus.textContent = 'Limpieza corta completada';
+                    cleaningStatus.className = 'alert success';
+                }
+            }, 1000);
+        }
+// Función para limpiar todos los anuncios en una página
+function clearAlerts() {
+    const alerts = document.querySelectorAll('.alert'); // Seleccionar todos los elementos con clase 'alert'
+    alerts.forEach(alert => {
+        alert.textContent = ''; // Vaciar el contenido del anuncio
+        alert.className = 'alert'; // Resetear la clase para eliminar los estilos adicionales
+    });
+}
+
+
+        // Función para la limpieza preventiva
+        async function preventiveClear() {
+            const cleaningStatus = document.getElementById('cleaning-status');
+            const timer = document.getElementById('cleaning-timer');
+            
+            cleaningStatus.textContent = 'Iniciando limpieza preventiva...';
+            cleaningStatus.className = 'alert info';
+
+            // Simulación del proceso de limpieza preventiva
+            let cycle = 1;
+            let totalTime = 60; // 1 minuto total
+
+            const interval = setInterval(() => {
+                timer.textContent = `Ciclo ${cycle} - Tiempo restante: ${totalTime}s`;
+                totalTime--;
+                
+                if (totalTime % 60 === 0) {
+                    cycle++;
+                }
+                
+                if (totalTime < 0) {
+                    clearInterval(interval);
+                    timer.textContent = '';
+                    cleaningStatus.textContent = 'Limpieza preventiva completada';
+                    cleaningStatus.className = 'alert success';
+                }
+            }, 1000);
+        }
+    
+// Función para conectar con el puerto serie
+async function connectToArduino() {
+    try {
+        // Pedir acceso al dispositivo serial
+        const port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 9600 });
+
+        // Leer datos desde el puerto serial
+        const reader = port.readable.getReader();
+        const decoder = new TextDecoder();
+        const stream = new ReadableStream({
+            start(controller) {
+                async function read() {
+                    try {
+                        const { value, done } = await reader.read();
+                        if (done) {
+                            reader.releaseLock();
+                            return;
+                        }
+                        controller.enqueue(decoder.decode(value));
+                        read();
+                    } catch (error) {
+                        console.error('Error al leer desde el puerto serial:', error);
+                    }
+                }
+                read();
+            }
+        });
+
+        const streamReader = stream.getReader();
+
+        // Enviar datos al Arduino (Ejemplo: Control de válvula)
+        function sendToArduino(message) {
+            const writer = port.writable.getWriter();
+            writer.write(new TextEncoder().encode(message));
+        }
+
+        // Ejemplo: Enviar un comando para abrir la válvula
+        sendToArduino('abrir_válvula');
+    } catch (error) {
+        console.error('Error de conexión al puerto serial:', error);
+    }
+}
+async function readFromArduino(port) {
+    try {
+        const reader = port.readable.getReader();
+        const decoder = new TextDecoder();
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            // Decodificar y mostrar los datos recibidos en el monitor serial
+            const receivedData = decoder.decode(value);
+            console.log(receivedData);  // Mostrar en la consola
+            document.getElementById('serial-monitor').textContent += receivedData + '\n';  // Mostrar en la interfaz
+        }
+    } catch (error) {
+        console.error('Error al leer desde el puerto serial:', error);
+    }
+}
+async function sendToArduino(message) {
+    try {
+        const writer = port.writable.getWriter();
+        const encoder = new TextEncoder();
+        writer.write(encoder.encode(message));
+        writer.releaseLock();
+    } catch (error) {
+        console.error('Error al escribir en el puerto serial:', error);
+    }
+}
+
+// Llamar a la función cuando el usuario quiere conectarse
+document.getElementById('connect-button').addEventListener('click', connectToArduino);
+
+        // Función para guardar nueva receta
+        function saveNewRecipe(event) {
+            event.preventDefault();
+            
+            const names = document.getElementById('recipes-name').value;
+            const temps = document.getElementById('recipes-temp').value;
+            const waters = document.getElementById('recipes-water').value;
+            const times = document.getElementById('recipes-time').value;
+
+            // Validaciones
+            if (temps < 60 || temps > 92 || isNaN(temps)) {
+                alert('La temperatura debe estar entre 60°C y 92°C y debe ser un número válido');
+                return;
+            }
+            if (waters < 60 || waters > 450) {
+                alert('La cantidad de agua debe estar entre 60ml y 450ml');
+                return;
+            }
+            if (times < 15 || times > 300) {
+                alert('El tiempo de infusión debe estar entre 15s y 300s');
+                return;
+            }
+
+            // Guardar receta
+            const newRecipe = { names, temps, waters, times };
+            state.savedRecipes.push(newRecipe);
+
+            // Actualizar select de recetas
+            const select = document.getElementById('recipe-select');
+            const option = document.createElement('option');
+            option.value = name.toLowerCase();
+            option.textContent = names;
+            select.appendChild(option);
+
+            // Limpiar formulario y volver al menú
+            event.target.reset();
+            switchPage('menu-page');
+            alert('Receta guardada exitosamente');
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Navegación
+            document.getElementById('start-button').addEventListener('click', () => switchPage('menu-page'));
+            document.getElementById('verify-button').addEventListener('click', () => switchPage('verify-page'));
+            document.getElementById('clean-button').addEventListener('click', () => switchPage('clean-page'));
+            document.getElementById('prepare-button').addEventListener('click', () => switchPage('prepare-page'));
+            document.getElementById('new-recipe-button').addEventListener('click', () => switchPage('new-recipe-page'));
+            document.getElementById('emergency-button').addEventListener('click', () => switchPage('emergency-page'));
+            document.getElementById('connect-bluetooth').addEventListener('click', toggleBluetooth);
+            // Botones de regresar
+            document.querySelectorAll('[id^="back-to-menu"]').forEach(button => {
+                button.addEventListener('click', () => switchPage('menu-page'));
+            });
+
+            // Botones de válvula
+            document.getElementById('valve-button').addEventListener('click', () => handleValve('valve-status'));
+            document.getElementById('clean-valve-button').addEventListener('click', () => handleValve('clean-valve-status'));
+            document.getElementById('valve-prepare-button').addEventListener('click', () => handleValve('valve-prepare-status'));
+
+            // Limpieza
+            document.getElementById('short-clean').addEventListener('click', shortClean);
+            document.getElementById('preventive-clean').addEventListener('click', preventiveClear);
+
+            // Nueva receta
+            document.getElementById('new-recipe-form').addEventListener('submit', saveNewRecipe);
+
+            // Event listener para el botón Confirmar
+            document.getElementById('confirm-recipe').addEventListener('click', confirmRecipe);
+
+function confirmRecipe() {
+    const recipeSelect = document.getElementById('recipe-select');
+    const recipeAlert = document.getElementById('recipe-alert');
+    const selectedRecipe = recipeSelect.options[recipeSelect.selectedIndex].text; // Obtener nombre de la receta seleccionada
+
+    if (selectedRecipe) {
+        recipeAlert.textContent = `Receta "${selectedRecipe}" seleccionada correctamente.`;
+        recipeAlert.className = 'alert success';
+
+        // Desplegar las secciones de ajuste
+        document.getElementById('adjustments-section').style.display = 'block';
+
+        // Cargar los ajustes guardados para la receta seleccionada
+        const savedRecipe = state.savedRecipes[selectedRecipe]; // Obtener los ajustes guardados para la receta seleccionada
+
+        if (savedRecipe) {
+            // Si hay ajustes guardados, cargarlos en los campos de la receta
+            document.getElementById('recipe-temp').value = savedRecipe.temp;
+            document.getElementById('recipe-water').value = savedRecipe.water;
+            document.getElementById('recipe-time').value = savedRecipe.time;
+        } else {
+            // Si no hay ajustes guardados, dejar los campos vacíos
+            document.getElementById('recipe-temp').value = '';
+            document.getElementById('recipe-water').value = '';
+            document.getElementById('recipe-time').value = '';
+        }
+    } else {
+        recipeAlert.textContent = 'Por favor, seleccione una receta.';
+        recipeAlert.className = 'alert error';
+    }
+}
+
+// Guardar los ajustes realizados
+document.getElementById('save-adjustments').addEventListener('click', () => {
+    const temp = document.getElementById('recipe-temp').value;
+    const water = document.getElementById('recipe-water').value;
+    const time = document.getElementById('recipe-time').value;
+
+    // Validar los ajustes
+    if (temp < 60 || temp > 92) {
+        alert('La temperatura debe estar entre 60°C y 92°C');
+        return;
+    }
+    if (water < 60 || water > 450) {
+        alert('La cantidad de agua debe estar entre 60ml y 450ml');
+        return;
+    }
+    if (time < 15 || time > 300) {
+        alert('El tiempo de infusión debe estar entre 15s y 300s');
+        return;
+    }
+
+    // Obtener la receta seleccionada
+    const selectedRecipe = document.getElementById('recipe-select').value;
+
+    // Guardar los ajustes en el estado para la receta seleccionada
+    state.savedRecipes[selectedRecipe] = { temp, water, time };
+
+    alert('Ajustes guardados correctamente.');
+
+    // Limpiar los campos de entrada después de guardar los ajustes
+    document.getElementById('recipe-temp').value = '';
+    document.getElementById('recipe-water').value = '';
+    document.getElementById('recipe-time').value = '';
+
+    // Volver al menú de preparación (si tienes una función para eso)
+    switchPage('prepare-page');
+});
+
+
+
+                            // Event listeners para todos los botones "Regresar"
+                document.querySelectorAll('[id^="back-to-menu"]').forEach(button => {
+                    button.addEventListener('click', clearAlerts);
+                });
+
+
+            // Ajuste de temperatura
+            document.getElementById('adjust-temp-button').addEventListener('click', () => {
+                const code = prompt('Ingrese el código de seguridad:');
+                if (code === '1234') {
+                    const newTemp = parseInt(prompt('Ingrese la nueva temperatura (60-128°C):'), 10);
+                    if (newTemp >= 60 && newTemp <= 128) {
+                        state.boilerTemp = newTemp;
+                        document.getElementById('boiler-temp').textContent = `${state.boilerTemp}°C`;
+                        showAlert('adjust-temp-status', 'Temperatura ajustada correctamente.', 'success');
+                    } else {
+                        showAlert('adjust-temp-status', 'Temperatura fuera de rango.', 'error');
+                    }
+                } else {
+                    showAlert('adjust-temp-status', 'Código incorrecto.', 'error');
+                }
+            });
+
+            // Reset de emergencia
+            document.getElementById('reset-system').addEventListener('click', () => {
+                alert('Sistema reiniciado. Regresando al menú principal.');
+                switchPage('menu-page');
+            });
+        });
+    </script>
+</body>
+</html>
