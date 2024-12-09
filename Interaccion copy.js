@@ -11,7 +11,7 @@ app.use(bodyParser.json());
 app.use(express.static(__dirname)); // Serve static files (like HTML)
 
 // Set the correct COM port for your Arduino
-const portName = 'COM3';
+const portName = 'COM4';
 let arduinoPort;
 let parser;
 
@@ -35,7 +35,7 @@ try {
 
 // Serve the HTML file
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/prueba_modified.html'); // Ensure the HTML file exists
+    res.sendFile(__dirname + '/index copy.html'); // Ensure the HTML file exists
 });
 
 // Endpoint to send commands to Arduino

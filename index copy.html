@@ -222,75 +222,37 @@
 
         sendButton.disabled = false; // Enable the send button when ready
 
-        document.addEventListener('DOMContentLoaded', () => {
-        const serialMonitor = document.getElementById('serial-monitor');
-        const connectButton = document.getElementById('connect-button');
-        const sendButton = document.getElementById('send-btn');
-
-        let port; // The serial port object
-        let writer; // The writer object for sending data
-        let reader; // The reader object for reading data
-
-        // Function to connect to Arduino
-        async function connectToArduino() {
-            try {
-                port = await navigator.serial.requestPort();
-                await port.open({ baudRate: 9600 });
-
-                const encoder = new TextEncoderStream();
-                writer = encoder.writable.getWriter();
-                encoder.readable.pipeTo(port.writable);
-
-                const decoder = new TextDecoderStream();
-                reader = decoder.readable.getReader();
-                port.readable.pipeTo(decoder.writable);
-
-                serialMonitor.textContent += 'Arduino connected!\n';
-                listenToArduino(); // Start listening for data
-            } catch (error) {
-                console.error('Error connecting to Arduino:', error);
-                alert('Failed to connect to Arduino.');
-            }
-        }
-
-        // Function to send a command to the Arduino
-        async function sendCommand() {
+        sendButton.addEventListener('click', async () => {
+            // Prompt the user to enter a command
             const command = prompt('Enter a command (1-19):');
+
+            // Validate the command
             if (!command || isNaN(command) || command < 1 || command > 19) {
                 alert('Invalid command. Please enter a number between 1 and 19.');
                 return;
             }
 
             try {
-                await writer.write(command + '\n');
-                serialMonitor.textContent += `Sent: ${command}\n`;
-            } catch (error) {
-                console.error('Error sending command:', error);
-                alert('Failed to send command.');
-            }
-        }
+                // Send the command to the backend
+                const response = await fetch('/send-to-arduino', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command }),
+                });
 
-        // Function to listen for responses from the Arduino
-        async function listenToArduino() {
-            while (true) {
-                try {
-                    const { value, done } = await reader.read();
-                    if (done) {
-                        reader.releaseLock();
-                        break;
-                    }
-                    serialMonitor.textContent += `Arduino: ${value.trim()}\n`;
-                } catch (error) {
-                    console.error('Error reading from Arduino:', error);
-                    break;
+                // Check the response status
+                if (!response.ok) {
+                    throw new Error('Failed to communicate with Arduino.');
                 }
-            }
-        }
 
-        // Attach event listeners
-        connectButton.addEventListener('click', connectToArduino);
-        sendButton.addEventListener('click', sendCommand);
-    });
+                // Parse and display the response from Arduino
+                const responseText = await response.text();
+                serialMonitor.textContent += `Arduino: ${responseText}\n`;
+            } catch (error) {
+                console.error('Error:', error.message);
+                alert('Error communicating with Arduino.');
+            }
+        });
 
     });
         // Estado de la aplicación
@@ -715,6 +677,75 @@ document.getElementById('save-adjustments').addEventListener('click', () => {
         }
 
         document.getElementById('connect-button').addEventListener('click', connectToArduino);
+    });
+    document.addEventListener('DOMContentLoaded', () => {
+        const serialMonitor = document.getElementById('serial-monitor');
+        const connectButton = document.getElementById('connect-button');
+        const sendButton = document.getElementById('send-btn');
+
+        let port; // The serial port object
+        let writer; // The writer object for sending data
+        let reader; // The reader object for reading data
+
+        // Function to connect to Arduino
+        async function connectToArduino() {
+            try {
+                port = await navigator.serial.requestPort();
+                await port.open({ baudRate: 9600 });
+
+                const encoder = new TextEncoderStream();
+                writer = encoder.writable.getWriter();
+                encoder.readable.pipeTo(port.writable);
+
+                const decoder = new TextDecoderStream();
+                reader = decoder.readable.getReader();
+                port.readable.pipeTo(decoder.writable);
+
+                serialMonitor.textContent += 'Arduino connected!\n';
+                listenToArduino(); // Start listening for data
+            } catch (error) {
+                console.error('Error connecting to Arduino:', error);
+                alert('Failed to connect to Arduino.');
+            }
+        }
+
+        // Function to send a command to the Arduino
+        async function sendCommand() {
+            const command = prompt('Enter a command (1-19):');
+            if (!command || isNaN(command) || command < 1 || command > 19) {
+                alert('Invalid command. Please enter a number between 1 and 19.');
+                return;
+            }
+
+            try {
+                await writer.write(command + '\n');
+                serialMonitor.textContent += `Sent: ${command}\n`;
+            } catch (error) {
+                console.error('Error sending command:', error);
+                alert('Failed to send command.');
+            }
+        }
+
+        // Function to listen for responses from the Arduino
+        async function listenToArduino() {
+            while (true) {
+                try {
+                    const { value, done } = await reader.read();
+                    if (done) {
+                        reader.releaseLock();
+                        break;
+                    }
+                    serialMonitor.textContent += `Arduino: ${value.trim()}\n`;
+                } catch (error) {
+                    console.error('Error reading from Arduino:', error);
+                    break;
+                }
+            }
+        }
+
+        // Attach event listeners
+        connectButton.addEventListener('click', connectToArduino);
+        sendButton.addEventListener('click', sendCommand);
     });
 </script>
 </body>
