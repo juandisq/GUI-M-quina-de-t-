@@ -35,7 +35,7 @@ try {
 
 // Serve the HTML file
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/prueba copy.html'); // Ensure the HTML file exists
+    res.sendFile(__dirname + '/prueba_modified.html'); // Ensure the HTML file exists
 });
 
 // Endpoint to send commands to Arduino

@@ -608,7 +608,7 @@ document.getElementById('save-adjustments').addEventListener('click', () => {
     document.addEventListener('DOMContentLoaded', () => {
         const serialMonitor = document.getElementById('serial-monitor');
         
-        // Mapeo de comandos
+        // Updated mapping to include commands 20, 21, and 22
         const commandMapping = {
             1: "Válvula 1 de Mezcla Abierta / Llenando Krisol 1",
             2: "Válvula 1 de Mezcla Cerrada",
@@ -628,16 +628,20 @@ document.getElementById('save-adjustments').addEventListener('click', () => {
             16: "Vapor 1 Sellado",
             17: "Inyectando Vapor en Krisol 2",
             18: "Vapor 2 Sellado",
-            19: "Inyectando Vapor en Krisol 3"
+            19: "Inyectando Vapor en Krisol 3",
+            20: "Válvula Especial Abierta",
+            21: "Válvula Especial Cerrada",
+            22: "Proceso de Calibración Iniciado"
         };
 
-        // Función para mostrar los mensajes traducidos en el monitor serial
+        // Update the monitor to show messages for all commands
         async function updateSerialMonitor(commandNumber) {
+            
             const message = commandMapping[commandNumber] || `Comando desconocido: ${commandNumber}`;
             serialMonitor.textContent += `${message}\n`;
         }
 
-        // Modifica la lógica que procesa los datos recibidos desde el Arduino
+        // Adjust logic to handle commands 1 to 22
         async function connectToArduino() {
             try {
                 const port = await navigator.serial.requestPort();
@@ -650,7 +654,7 @@ document.getElementById('save-adjustments').addEventListener('click', () => {
                     const { value, done } = await reader.read();
                     if (done) break;
 
-                    // Decodifica el número recibido
+                    // Decode and process the received command
                     const receivedData = decoder.decode(value).trim();
                     const commandNumber = parseInt(receivedData, 10);
                     
@@ -666,6 +670,34 @@ document.getElementById('save-adjustments').addEventListener('click', () => {
         }
 
         document.getElementById('connect-button').addEventListener('click', connectToArduino);
+
+        // Prompt user for a command to send
+        document.getElementById('send-btn').addEventListener('click', async () => {
+            const command = prompt('Ingrese un comando (1-22):');
+            if (!command || isNaN(command) || command < 1 || command > 22) {
+                alert('Comando inválido. Por favor, ingrese un número entre 1 y 22.');
+                return;
+            }
+
+            try {
+                // Logic to send the command to the Arduino
+                const response = await fetch('/send-to-arduino', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al comunicar con el Arduino.');
+                }
+
+                const responseText = await response.text();
+                serialMonitor.textContent += `Arduino: ${responseText}\n`;
+            } catch (error) {
+                console.error('Error:', error.message);
+                alert('Error al enviar el comando.');
+            }
+        });
     });
 </script>
 </body>
